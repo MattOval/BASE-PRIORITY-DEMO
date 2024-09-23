@@ -1,0 +1,47 @@
+import threading
+import queue
+import time
+
+# A function that simulates a task
+def task(name, priority):
+    print(f"Task {name} with priority {priority} started.")
+    time.sleep(1)  # Simulate work
+    print(f"Task {name} completed.")
+
+# Worker function to process tasks from the priority queue
+def worker(q):
+    while True:
+        # Get the next task from the queue
+        priority, name = q.get()
+        if name is None:  # Check for termination signal
+            break
+        task(name, priority)
+        q.task_done()
+
+# Create a priority queue
+priority_queue = queue.PriorityQueue()
+
+# Create and start worker threads
+num_worker_threads = 3
+threads = []
+for _ in range(num_worker_threads):
+    t = threading.Thread(target=worker, args=(priority_queue,))
+    t.start()
+    threads.append(t)
+
+# Adding tasks to the priority queue (lower number means higher priority)
+priority_queue.put((2, 'Task 1'))  # Priority 2
+priority_queue.put((1, 'Task 2'))  # Priority 1 (higher priority)
+priority_queue.put((3, 'Task 3'))  # Priority 3
+
+# Wait for all tasks to be completed
+priority_queue.join()
+
+# Stop workers
+for _ in range(num_worker_threads):
+    priority_queue.put((0, None))  # Signal for threads to exit
+
+for t in threads:
+    t.join()
+
+print("All tasks completed.")
